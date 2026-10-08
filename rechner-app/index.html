@@ -101,7 +101,7 @@ body.editing .tape:not(.add){outline:2px dashed var(--key-ink);outline-offset:3p
 .k:disabled{opacity:.45;cursor:default;transform:none}
 .k.fn{background:var(--fn);font-size:17px}
 .k.op{background:var(--op);color:var(--op-ink);font-size:30px}
-.k.eq{background:var(--eq);color:var(--eq-ink);font-size:30px}
+.k.eq{background:var(--eq);color:var(--eq-ink);font-size:30px;grid-column:1/-1}
 
 /* Editor */
 .dlg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:10;padding:12px}
@@ -150,7 +150,6 @@ legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
   <div class="pad">
     <button class="k fn" id="undoBtn">Rückgängig</button>
     <button class="k fn" id="resetBtn">Alles zurücksetzen</button>
-    <button class="k op" id="plusBtn" aria-label="plus">+</button>
     <button class="k eq" id="eqBtn" aria-label="Ergebnis">=</button>
   </div>
 </main>
@@ -224,13 +223,6 @@ function addValue(k){
   S.tokens.push({t:'v', name:k.name, value:k.value});
   render();
 }
-function plus(){
-  if(!S.tokens.length || (lastTok().t === '+' && !S.done)) return;
-  snap();
-  if(S.done) S = {tokens:[{t:'v', name:'Ergebnis', value:sum(S.tokens)}], done:false};
-  S.tokens.push({t:'+'});
-  render();
-}
 function equals(){
   if(!S.tokens.some(t => t.t === 'v') || S.done) return;
   snap();
@@ -272,14 +264,13 @@ function render(){
   $('#resetBtn').disabled = !toks.length;
 }
 
-$('#plusBtn').onclick = plus;
 $('#eqBtn').onclick = equals;
 $('#undoBtn').onclick = undo;
 $('#resetBtn').onclick = reset;
 document.addEventListener('dblclick', e => e.preventDefault(), {passive:false});
 document.addEventListener('keydown', e => {
   if(!$('#dlg').hidden || e.target.matches('input') || e.metaKey || e.ctrlKey || e.altKey) return;
-  const map = {'+':plus, 'Enter':equals, '=':equals, 'Backspace':undo, 'Escape':reset, 'Delete':reset};
+  const map = {'Enter':equals, '=':equals, 'Backspace':undo, 'Escape':reset, 'Delete':reset};
   if(map[e.key]){ e.preventDefault(); map[e.key](); }
 });
 
