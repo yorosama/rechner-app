@@ -199,9 +199,9 @@ if(!Array.isArray(keys)){
       keys.push({id:k.id||newId(), name:k.name, value:parseNum(k.value), color:k.color||'black'});
   } catch(e){}
   if(!keys.length) keys = [
-    {id:newId(), name:'Kaffee', value:2.5, color:'black'},
-    {id:newId(), name:'Brötchen', value:0.8, color:'orange'},
-    {id:newId(), name:'Wasser', value:1.2, color:'blue'},
+    {id:newId(), name:'Huhn/Tofu', value:8.5, color:'orange'},
+    {id:newId(), name:'Gebacken', value:8.5, color:'orange'},
+    {id:newId(), name:'Ente, Garnelen, Lachs', value:11.5, color:'orange'},
   ];
 }
 const saveKeys = () => { try { localStorage.setItem(STORE, JSON.stringify(keys)); } catch(e){} };
