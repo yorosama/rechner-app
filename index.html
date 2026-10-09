@@ -149,8 +149,7 @@ legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
   <div class="pad">
     <button class="k fn" id="undoBtn">Rückgängig</button>
     <button class="k fn" id="resetBtn">Alles zurücksetzen</button>
-    <button class="k op" id="plusBtn" aria-label="plus">+</button>
-    <button class="k eq" id="eqBtn" aria-label="Ergebnis">=</button>
+    <button class="k eq" id="eqBtn" aria-label="Ergebnis" style="grid-column:1/-1">=</button>
   </div>
 </main>
 
@@ -271,7 +270,6 @@ function render(){
   $('#resetBtn').disabled = !toks.length;
 }
 
-$('#plusBtn').onclick = plus;
 $('#eqBtn').onclick = equals;
 $('#undoBtn').onclick = undo;
 $('#resetBtn').onclick = reset;
