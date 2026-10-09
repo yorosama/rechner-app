@@ -69,8 +69,9 @@ button,input{font:inherit;color:inherit}
 
 /* Eigene Knöpfe als Etikettenband */
 .tapes{margin:18px 2px 16px}
-.tapes-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
-.tapes-head h2{font-size:15px;font-weight:700;margin:0}
+.tapes-top{display:flex;justify-content:flex-end;margin-bottom:-6px}
+.group+.group{margin-top:20px}
+.group h2{font-size:15px;font-weight:700;margin:0 0 10px}
 .link-btn{background:none;border:0;padding:6px 2px;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:var(--key-ink)}
 .tape-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:12px 10px}
 .tape{
@@ -109,8 +110,8 @@ body.editing .tape:not(.add){outline:2px dashed var(--key-ink);outline-offset:3p
 .dlg-box h2{margin:0 0 14px;font-size:20px}
 .dlg-box p{margin:0 0 16px}
 .fld{display:block;font-size:14px;font-weight:700;margin-bottom:14px}
-.fld input{display:block;width:100%;margin-top:5px;padding:11px 12px;border:2px solid var(--line);border-radius:8px;background:var(--page);font-weight:400;font-size:17px}
-.fld input:focus{border-color:var(--key-ink);outline:none}
+.fld input,.fld select{display:block;width:100%;margin-top:5px;padding:11px 12px;border:2px solid var(--line);border-radius:8px;background:var(--page);font-weight:400;font-size:17px}
+.fld input:focus,.fld select:focus{border-color:var(--key-ink);outline:none}
 .help{font-size:13px;color:var(--muted);font-weight:400;margin-top:5px;display:block}
 fieldset{border:0;padding:0;margin:0 0 14px}
 legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
@@ -137,12 +138,11 @@ legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
     <div class="preview" id="preview" aria-live="polite"></div>
   </div>
 
-  <section class="tapes" aria-labelledby="tapesH">
-    <div class="tapes-head">
-      <h2 id="tapesH">Meine Knöpfe</h2>
+  <section class="tapes" aria-label="Knöpfe">
+    <div class="tapes-top">
       <button class="link-btn" id="editToggle">Bearbeiten</button>
     </div>
-    <div class="tape-row" id="tapeRow"></div>
+    <div id="groups"></div>
     <p class="tape-hint" id="tapeHint" hidden></p>
   </section>
 
@@ -163,6 +163,9 @@ legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
       <input type="text" id="fValue" inputmode="decimal" autocomplete="off" placeholder="z. B. 2,50">
       <span class="help">Mit Minus davor wird abgezogen, zum Beispiel -5 für einen Rabatt.</span>
     </label>
+    <label class="fld">Kategorie
+      <select id="fCat"></select>
+    </label>
     <fieldset>
       <legend>Farbe</legend>
       <div class="swatches" id="swatches"></div>
@@ -181,6 +184,7 @@ legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
 (() => {
 const $ = s => document.querySelector(s);
 const COLORS = {black:['#1C1C1E','Schwarz'], red:['#B42323','Rot'], blue:['#1F4FA3','Blau'], green:['#1E6B45','Grün'], purple:['#5B2E8C','Lila'], orange:['#B8560F','Orange']};
+const CATS = [['vorspeise','Vorspeise'], ['gerichte','Gerichte'], ['tages','Tagesgerichte'], ['getraenke','Getränke']];
 const STORE = 'rechner:v2';
 const nf = new Intl.NumberFormat('de-DE', {maximumFractionDigits:10});
 const fmt = v => nf.format(Math.round(v * 1e10) / 1e10);
@@ -200,10 +204,13 @@ if(!Array.isArray(keys)){
   } catch(e){}
   if(!keys.length) keys = [
     {id:newId(), name:'Huhn/Tofu', value:8.5, color:'orange'},
-    {id:newId(), name:'Gebacken', value:8.5, color:'orange'},
+    {id:newId(), name:'Gebacken', value:9.5, color:'orange'},
     {id:newId(), name:'Ente, Garnelen, Lachs', value:11.5, color:'orange'},
+    {id:newId(), name:'Tintenfisch', value:11.5, color:'orange'},
+    {id:newId(), name:'Rindfleisch', value:11.5, color:'orange'},
   ];
 }
+for(const k of keys) if(!CATS.some(([id]) => id === k.cat)) k.cat = 'gerichte';
 const saveKeys = () => { try { localStorage.setItem(STORE, JSON.stringify(keys)); } catch(e){} };
 
 /* ---------- Rechnung ----------
@@ -281,23 +288,32 @@ document.addEventListener('keydown', e => {
 
 /* ---------- Knöpfe anzeigen ---------- */
 function renderKeys(){
-  const row = $('#tapeRow'); row.innerHTML = '';
+  const groups = $('#groups'); groups.innerHTML = '';
   const editing = document.body.classList.contains('editing');
-  for(const k of keys){
-    const b = document.createElement('button');
-    b.className = 'tape';
-    b.style.setProperty('--c', (COLORS[k.color] || COLORS.black)[0]);
-    b.innerHTML = '<span class="n"></span><span class="v"></span>';
-    b.querySelector('.n').textContent = k.name;
-    b.querySelector('.v').textContent = fmt(k.value);
-    b.setAttribute('aria-label', editing ? `${k.name} ändern` : `${k.name}, ${fmt(k.value)}`);
-    b.onclick = () => editing ? openEditor(k) : addValue(k);
-    row.append(b);
+  for(const [cat, label] of CATS){
+    const g = document.createElement('div');
+    g.className = 'group';
+    g.innerHTML = `<h2 id="h-${cat}"></h2><div class="tape-row" role="group" aria-labelledby="h-${cat}"></div>`;
+    g.querySelector('h2').textContent = label;
+    const row = g.querySelector('.tape-row');
+    for(const k of keys.filter(k => k.cat === cat)){
+      const b = document.createElement('button');
+      b.className = 'tape';
+      b.style.setProperty('--c', (COLORS[k.color] || COLORS.black)[0]);
+      b.innerHTML = '<span class="n"></span><span class="v"></span>';
+      b.querySelector('.n').textContent = k.name;
+      b.querySelector('.v').textContent = fmt(k.value);
+      b.setAttribute('aria-label', editing ? `${k.name} ändern` : `${k.name}, ${fmt(k.value)}`);
+      b.onclick = () => editing ? openEditor(k) : addValue(k);
+      row.append(b);
+    }
+    const add = document.createElement('button');
+    add.className = 'tape add'; add.textContent = '+ Neuer Knopf';
+    add.setAttribute('aria-label', `Neuer Knopf in ${label}`);
+    add.onclick = () => openEditor(null, cat);
+    row.append(add);
+    groups.append(g);
   }
-  const add = document.createElement('button');
-  add.className = 'tape add'; add.textContent = '+ Neuer Knopf';
-  add.onclick = () => openEditor(null);
-  row.append(add);
   const hint = $('#tapeHint');
   hint.hidden = !(editing || !keys.length);
   hint.textContent = !keys.length
@@ -318,14 +334,16 @@ const sw = $('#swatches');
 for(const [id, [hex, name]] of Object.entries(COLORS)){
   sw.insertAdjacentHTML('beforeend', `<label><input type="radio" name="color" value="${id}" aria-label="${name}"><span style="background:${hex}"></span></label>`);
 }
-const form = $('#form'), fName = $('#fName'), fValue = $('#fValue'), fErr = $('#fErr');
+const form = $('#form'), fName = $('#fName'), fValue = $('#fValue'), fCat = $('#fCat'), fErr = $('#fErr');
+for(const [id, label] of CATS) fCat.add(new Option(label, id));
 let editing = null, delArmed = false;
 
-function openEditor(k){
+function openEditor(k, cat){
   editing = k; delArmed = false;
   $('#dlgH').textContent = k ? 'Knopf ändern' : 'Neuer Knopf';
   fName.value = k?.name || '';
   fValue.value = k ? String(k.value).replace('.', ',') : '';
+  fCat.value = k?.cat || cat || 'gerichte';
   form.querySelector(`input[name=color][value=${k?.color || 'black'}]`).checked = true;
   $('#delBtn').hidden = !k; $('#delBtn').textContent = 'Löschen';
   fErr.hidden = true;
@@ -345,7 +363,7 @@ form.addEventListener('submit', e => {
   const name = fName.value.trim(), v = fValue.value.trim();
   if(!name){ fErr.textContent = 'Gib dem Knopf eine Beschriftung.'; fErr.hidden = false; fName.focus(); return; }
   if(!NUM_RE.test(v)){ fErr.textContent = 'Gib als Wert eine Zahl ein, zum Beispiel 2,50.'; fErr.hidden = false; fValue.focus(); return; }
-  const data = {name, value:parseNum(v), color:form.querySelector('input[name=color]:checked').value};
+  const data = {name, value:parseNum(v), cat:fCat.value, color:form.querySelector('input[name=color]:checked').value};
   if(editing) Object.assign(editing, data);
   else keys.push({id:newId(), ...data});
   saveKeys(); closeEditor(); renderKeys();
