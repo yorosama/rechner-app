@@ -257,8 +257,16 @@ function reset(){
 
 function render(){
   const toks = S.tokens;
-  const names = toks.map(t => t.t === '+' ? '+' : t.name).join(' ');
-  const vals = toks.map(t => t.t === '+' ? '+' : fmt(t.value)).join(' ');
+  // Gleiche Knöpfe zusammenfassen: "2x Huhn/Tofu" statt zweimal einzeln
+  const items = [];
+  for(const t of toks) if(t.t === 'v'){
+    const same = items.find(i => i.name === t.name && i.value === t.value);
+    if(same) same.n++; else items.push({name:t.name, value:t.value, n:1});
+  }
+  const cnt = i => i.n > 1 ? i.n + 'x ' : '';
+  const open = lastTok()?.t === '+' ? ' +' : '';
+  const names = items.map(i => cnt(i) + i.name).join(' + ') + open;
+  const vals = items.map(i => cnt(i) + fmt(i.value)).join(' + ') + open;
   const total = sum(toks);
   let lineTxt, bigTxt, prevTxt = '';
   if(!toks.length){ lineTxt = ''; bigTxt = '0'; }
