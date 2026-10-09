@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D8DAD3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rechner">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Mein Rechner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#ECEDE8; --body:#D8DAD3; --key:#F7F7F4; --key-ink:#24262A; --fn:#E4E5DF;
+  --op:#3A3D42; --op-ink:#F7F7F4; --eq:#E6A526; --eq-ink:#1D1B16;
+  --screen:#C4CCBA; --screen-ink:#1E2419; --muted:#5C6058; --line:#B7BAB1; --danger:#A42222;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#141517; --body:#24262A; --key:#34373C; --key-ink:#ECEDEE; --fn:#2C2F33;
+    --op:#50545B; --op-ink:#F3F3F1; --eq:#E6A526; --eq-ink:#1D1B16;
+    --screen:#9DA893; --screen-ink:#1A2016; --muted:#A3A79E; --line:#3A3D42; --danger:#FF8A80;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#141517; --body:#24262A; --key:#34373C; --key-ink:#ECEDEE; --fn:#2C2F33;
+  --op:#50545B; --op-ink:#F3F3F1; --eq:#E6A526; --eq-ink:#1D1B16;
+  --screen:#9DA893; --screen-ink:#1A2016; --muted:#A3A79E; --line:#3A3D42; --danger:#FF8A80;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit;touch-action:manipulation}
+[hidden]{display:none!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--page);color:var(--key-ink);
+  font-family:"Archivo","Helvetica Neue",Arial,system-ui,sans-serif;
+  display:flex;justify-content:center;padding:16px 12px 28px;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;
+}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--eq);outline-offset:2px}
+
+.device{width:100%;max-width:440px;background:var(--body);border-radius:22px;padding:16px 14px}
+
+/* LCD */
+.screen{
+  background:var(--screen);color:var(--screen-ink);border-radius:10px;padding:12px 14px 10px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.18);min-height:138px;display:flex;flex-direction:column;justify-content:flex-end;
+  font-variant-numeric:tabular-nums;
+}
+.line{font-size:14px;min-height:20px;opacity:.78;text-align:right;overflow-wrap:anywhere}
+.line.err{opacity:1;font-weight:700}
+.big{font-size:46px;font-weight:600;line-height:1.1;text-align:right;overflow-wrap:anywhere;font-stretch:90%;letter-spacing:-.01em;margin-top:2px}
+.big.s{font-size:34px}.big.xs{font-size:26px}
+.preview{font-size:17px;min-height:26px;text-align:right;opacity:.72}
+
+/* Eigene Knöpfe als Etikettenband */
+.tapes{margin:18px 2px 16px}
+.tapes-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.tapes-head h2{font-size:15px;font-weight:700;margin:0}
+.link-btn{background:none;border:0;padding:6px 2px;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:var(--key-ink)}
+.tape-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:12px 10px}
+.tape{
+  --c:#1C1C1E;
+  min-height:66px;padding:9px 12px;border:0;border-radius:2px;cursor:pointer;touch-action:manipulation;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 40%,rgba(0,0,0,.14)),var(--c);
+  color:#fff;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:2px;
+  text-shadow:0 1px 0 rgba(0,0,0,.55),0 -1px 0 rgba(255,255,255,.18);
+  box-shadow:0 1px 0 rgba(0,0,0,.25);transform:rotate(-.6deg);
+}
+.tape:nth-child(2n){transform:rotate(.5deg)}
+.tape:nth-child(3n){transform:rotate(-.2deg)}
+.tape:active{transform:translateY(1px)}
+.tape .n{font-weight:800;font-stretch:72%;font-size:16px;letter-spacing:.12em;text-transform:uppercase;overflow-wrap:anywhere;line-height:1.2}
+.tape .v{font-size:14px;opacity:.85;font-variant-numeric:tabular-nums}
+.tape.add{background:transparent;color:var(--key-ink);border:2px dashed var(--muted);text-shadow:none;box-shadow:none;transform:none;font-weight:700;align-items:center;text-align:center}
+body.editing .tape:not(.add){outline:2px dashed var(--key-ink);outline-offset:3px}
+.tape-hint{font-size:14px;color:var(--muted);margin:10px 0 0}
+
+/* Steuertasten */
+.pad{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k{
+  min-height:58px;border:0;border-radius:12px;background:var(--key);color:var(--key-ink);
+  font-size:24px;font-weight:600;cursor:pointer;box-shadow:inset 0 -3px 0 rgba(0,0,0,.13);touch-action:manipulation;
+}
+.k:active{transform:translateY(1px);box-shadow:inset 0 -1px 0 rgba(0,0,0,.13)}
+.k:disabled{opacity:.45;cursor:default;transform:none}
+.k.fn{background:var(--fn);font-size:17px}
+.k.op{background:var(--op);color:var(--op-ink);font-size:30px}
+.k.eq{background:var(--eq);color:var(--eq-ink);font-size:30px}
+
+/* Editor */
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:10;padding:12px}
+@media (min-width:560px){.dlg{align-items:center}}
+.dlg-box{background:var(--key);color:var(--key-ink);border-radius:16px;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));width:100%;max-width:420px;max-height:calc(100% - 12px);overflow:auto}
+.dlg-box h2{margin:0 0 14px;font-size:20px}
+.dlg-box p{margin:0 0 16px}
+.fld{display:block;font-size:14px;font-weight:700;margin-bottom:14px}
+.fld input{display:block;width:100%;margin-top:5px;padding:11px 12px;border:2px solid var(--line);border-radius:8px;background:var(--page);font-weight:400;font-size:17px}
+.fld input:focus{border-color:var(--key-ink);outline:none}
+.help{font-size:13px;color:var(--muted);font-weight:400;margin-top:5px;display:block}
+fieldset{border:0;padding:0;margin:0 0 14px}
+legend{font-size:14px;font-weight:700;padding:0;margin-bottom:6px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatches label{position:relative}
+.swatches input{position:absolute;opacity:0}
+.swatches span{display:block;width:40px;height:40px;border-radius:3px;border:3px solid transparent;box-shadow:0 0 0 2px var(--line)}
+.swatches input:checked+span{border-color:var(--key);box-shadow:0 0 0 3px var(--key-ink)}
+.swatches input:focus-visible+span{outline:3px solid var(--eq);outline-offset:3px}
+.err{color:var(--danger);font-size:14px;font-weight:700}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.acts .sp{flex:1}
+.b{min-height:44px;padding:10px 16px;border-radius:10px;border:2px solid var(--key-ink);background:transparent;font-weight:700;cursor:pointer}
+.b.pri{background:var(--key-ink);color:var(--key)}
+.b.del{border-color:var(--danger);color:var(--danger)}
+@media (prefers-reduced-motion:reduce){.tape,.tape:nth-child(n){transform:none}.k:active{transform:none}}
+</style>
+</head>
+<body>
+<main class="device">
+  <div class="screen">
+    <div class="line" id="line" aria-live="polite"></div>
+    <div class="big" id="big">0</div>
+    <div class="preview" id="preview" aria-live="polite"></div>
+  </div>
+
+  <section class="tapes" aria-labelledby="tapesH">
+    <div class="tapes-head">
+      <h2 id="tapesH">Meine Knöpfe</h2>
+      <button class="link-btn" id="editToggle">Bearbeiten</button>
+    </div>
+    <div class="tape-row" id="tapeRow"></div>
+    <p class="tape-hint" id="tapeHint" hidden></p>
+  </section>
+
+  <div class="pad">
+    <button class="k fn" id="undoBtn">Rückgängig</button>
+    <button class="k fn" id="resetBtn">Alles zurücksetzen</button>
+    <button class="k op" id="plusBtn" aria-label="plus">+</button>
+    <button class="k eq" id="eqBtn" aria-label="Ergebnis">=</button>
+  </div>
+</main>
+
+<div class="dlg" id="dlg" hidden>
+  <form class="dlg-box" id="form" role="dialog" aria-modal="true" aria-labelledby="dlgH" novalidate>
+    <h2 id="dlgH">Neuer Knopf</h2>
+    <label class="fld">Beschriftung
+      <input type="text" id="fName" maxlength="24" autocomplete="off" placeholder="z. B. Kaffee">
+    </label>
+    <label class="fld">Wert
+      <input type="text" id="fValue" inputmode="decimal" autocomplete="off" placeholder="z. B. 2,50">
+      <span class="help">Mit Minus davor wird abgezogen, zum Beispiel -5 für einen Rabatt.</span>
+    </label>
+    <fieldset>
+      <legend>Farbe</legend>
+      <div class="swatches" id="swatches"></div>
+    </fieldset>
+    <p class="err" id="fErr" hidden></p>
+    <div class="acts">
+      <button type="button" class="b del" id="delBtn" hidden>Löschen</button>
+      <span class="sp"></span>
+      <button type="button" class="b" id="cancelBtn">Abbrechen</button>
+      <button type="submit" class="b pri">Speichern</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const COLORS = {black:['#1C1C1E','Schwarz'], red:['#B42323','Rot'], blue:['#1F4FA3','Blau'], green:['#1E6B45','Grün'], purple:['#5B2E8C','Lila'], orange:['#B8560F','Orange']};
+const STORE = 'rechner:v2';
+const nf = new Intl.NumberFormat('de-DE', {maximumFractionDigits:10});
+const fmt = v => nf.format(Math.round(v * 1e10) / 1e10);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const NUM_RE = /^-?\s*\d+([.,]\d+)?$/;
+const parseNum = s => parseFloat(s.replace(/\s/g,'').replace(',','.'));
+
+/* ---------- Knöpfe laden ---------- */
+let keys = null;
+try { keys = JSON.parse(localStorage.getItem(STORE)); } catch(e){}
+if(!Array.isArray(keys)){
+  keys = [];
+  try {
+    const old = JSON.parse(localStorage.getItem('rechner:keys'));
+    if(Array.isArray(old)) for(const k of old) if(k.kind === 'number' && NUM_RE.test(k.value||''))
+      keys.push({id:k.id||newId(), name:k.name, value:parseNum(k.value), color:k.color||'black'});
+  } catch(e){}
+  if(!keys.length) keys = [
+    {id:newId(), name:'Kaffee', value:2.5, color:'black'},
+    {id:newId(), name:'Brötchen', value:0.8, color:'orange'},
+    {id:newId(), name:'Wasser', value:1.2, color:'blue'},
+  ];
+}
+const saveKeys = () => { try { localStorage.setItem(STORE, JSON.stringify(keys)); } catch(e){} };
+
+/* ---------- Rechnung ----------
+   tokens: {t:'v', name, value} oder {t:'+'}; done = Ergebnis wird angezeigt */
+let S = {tokens:[], done:false};
+const history = [];
+const snap = () => history.push(JSON.stringify(S));
+const sum = toks => toks.reduce((a,t) => t.t === 'v' ? a + t.value : a, 0);
+const lastTok = () => S.tokens[S.tokens.length - 1];
+let errT = 0;
+
+function addValue(k){
+  snap();
+  if(S.done) S = {tokens:[], done:false};
+  if(lastTok()?.t === 'v') S.tokens.push({t:'+'});
+  S.tokens.push({t:'v', name:k.name, value:k.value});
+  render();
+}
+function plus(){
+  if(!S.tokens.length || (lastTok().t === '+' && !S.done)) return;
+  snap();
+  if(S.done) S = {tokens:[{t:'v', name:'Ergebnis', value:sum(S.tokens)}], done:false};
+  S.tokens.push({t:'+'});
+  render();
+}
+function equals(){
+  if(!S.tokens.some(t => t.t === 'v') || S.done) return;
+  snap();
+  if(lastTok().t === '+') S.tokens.pop();
+  S.done = true;
+  render();
+}
+function undo(){
+  if(!history.length) return;
+  S = JSON.parse(history.pop());
+  render();
+}
+function reset(){
+  if(!S.tokens.length) return;
+  snap();
+  S = {tokens:[], done:false};
+  render();
+}
+
+function render(){
+  const toks = S.tokens;
+  const names = toks.map(t => t.t === '+' ? '+' : t.name).join(' ');
+  const vals = toks.map(t => t.t === '+' ? '+' : fmt(t.value)).join(' ');
+  const total = sum(toks);
+  let lineTxt, bigTxt, prevTxt = '';
+  if(!toks.length){ lineTxt = ''; bigTxt = '0'; }
+  else if(S.done){ lineTxt = names + ' ='; bigTxt = fmt(total); }
+  else {
+    lineTxt = names; bigTxt = vals;
+    if(toks.filter(t => t.t === 'v').length > 1) prevTxt = 'Summe bisher: ' + fmt(total);
+  }
+  const big = $('#big');
+  big.textContent = bigTxt;
+  big.classList.toggle('s', bigTxt.length > 11 && bigTxt.length <= 18);
+  big.classList.toggle('xs', bigTxt.length > 18);
+  if(!errT){ $('#line').textContent = lineTxt; $('#line').classList.remove('err'); }
+  $('#preview').textContent = prevTxt;
+  $('#undoBtn').disabled = !history.length;
+  $('#resetBtn').disabled = !toks.length;
+}
+
+$('#plusBtn').onclick = plus;
+$('#eqBtn').onclick = equals;
+$('#undoBtn').onclick = undo;
+$('#resetBtn').onclick = reset;
+document.addEventListener('keydown', e => {
+  if(!$('#dlg').hidden || e.target.matches('input') || e.metaKey || e.ctrlKey || e.altKey) return;
+  const map = {'+':plus, 'Enter':equals, '=':equals, 'Backspace':undo, 'Escape':reset, 'Delete':reset};
+  if(map[e.key]){ e.preventDefault(); map[e.key](); }
+});
+
+/* ---------- Knöpfe anzeigen ---------- */
+function renderKeys(){
+  const row = $('#tapeRow'); row.innerHTML = '';
+  const editing = document.body.classList.contains('editing');
+  for(const k of keys){
+    const b = document.createElement('button');
+    b.className = 'tape';
+    b.style.setProperty('--c', (COLORS[k.color] || COLORS.black)[0]);
+    b.innerHTML = '<span class="n"></span><span class="v"></span>';
+    b.querySelector('.n').textContent = k.name;
+    b.querySelector('.v').textContent = fmt(k.value);
+    b.setAttribute('aria-label', editing ? `${k.name} ändern` : `${k.name}, ${fmt(k.value)}`);
+    b.onclick = () => editing ? openEditor(k) : addValue(k);
+    row.append(b);
+  }
+  const add = document.createElement('button');
+  add.className = 'tape add'; add.textContent = '+ Neuer Knopf';
+  add.onclick = () => openEditor(null);
+  row.append(add);
+  const hint = $('#tapeHint');
+  hint.hidden = !(editing || !keys.length);
+  hint.textContent = !keys.length
+    ? 'Leg deinen ersten Knopf an. Jeder Knopf steht für einen festen Wert, zum Beispiel einen Preis.'
+    : 'Tippe auf einen Knopf, um ihn zu ändern oder zu löschen.';
+  $('#editToggle').hidden = !keys.length;
+  if(!keys.length && editing) toggleEdit(false);
+}
+function toggleEdit(on){
+  document.body.classList.toggle('editing', on);
+  $('#editToggle').textContent = on ? 'Fertig' : 'Bearbeiten';
+  renderKeys();
+}
+$('#editToggle').onclick = () => toggleEdit(!document.body.classList.contains('editing'));
+
+/* ---------- Editor ---------- */
+const sw = $('#swatches');
+for(const [id, [hex, name]] of Object.entries(COLORS)){
+  sw.insertAdjacentHTML('beforeend', `<label><input type="radio" name="color" value="${id}" aria-label="${name}"><span style="background:${hex}"></span></label>`);
+}
+const form = $('#form'), fName = $('#fName'), fValue = $('#fValue'), fErr = $('#fErr');
+let editing = null, delArmed = false;
+
+function openEditor(k){
+  editing = k; delArmed = false;
+  $('#dlgH').textContent = k ? 'Knopf ändern' : 'Neuer Knopf';
+  fName.value = k?.name || '';
+  fValue.value = k ? String(k.value).replace('.', ',') : '';
+  form.querySelector(`input[name=color][value=${k?.color || 'black'}]`).checked = true;
+  $('#delBtn').hidden = !k; $('#delBtn').textContent = 'Löschen';
+  fErr.hidden = true;
+  $('#dlg').hidden = false;
+  fName.focus();
+}
+const closeEditor = () => { $('#dlg').hidden = true; editing = null; };
+$('#cancelBtn').onclick = closeEditor;
+$('#dlg').addEventListener('click', e => { if(e.target.id === 'dlg') closeEditor(); });
+$('#dlg').addEventListener('keydown', e => { if(e.key === 'Escape') closeEditor(); });
+$('#delBtn').onclick = () => {
+  if(!delArmed){ delArmed = true; $('#delBtn').textContent = 'Wirklich löschen?'; return; }
+  keys = keys.filter(x => x !== editing); saveKeys(); closeEditor(); renderKeys();
+};
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const name = fName.value.trim(), v = fValue.value.trim();
+  if(!name){ fErr.textContent = 'Gib dem Knopf eine Beschriftung.'; fErr.hidden = false; fName.focus(); return; }
+  if(!NUM_RE.test(v)){ fErr.textContent = 'Gib als Wert eine Zahl ein, zum Beispiel 2,50.'; fErr.hidden = false; fValue.focus(); return; }
+  const data = {name, value:parseNum(v), color:form.querySelector('input[name=color]:checked').value};
+  if(editing) Object.assign(editing, data);
+  else keys.push({id:newId(), ...data});
+  saveKeys(); closeEditor(); renderKeys();
+});
+
+renderKeys();
+render();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){ addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
+</script>
+</body>
+</html>
